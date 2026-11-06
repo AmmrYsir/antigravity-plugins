@@ -14,7 +14,7 @@ Each plugin in this repository is self-contained under the `plugins/` directory:
 
 ```text
 antigravity-plugins/
-├── README.md                                  # Repository overview, catalog list, and global installation instructions
+├── README.md                                  # Repository overview, catalog list, and installation guide
 ├── .gitignore                                 # Standard Git ignore rules
 ├── LICENSE                                    # MIT License
 └── plugins/                                   # Plugins Catalog
@@ -33,7 +33,7 @@ antigravity-plugins/
     └── rea/                                   # REA (Reverse Engineer Anything) Suite
         ├── plugin.json                        # Plugin manifest & suggested prompts
         ├── mcp_config.json                    # MCP server definition (rea-agents)
-        ├── README.md                          # Comprehensive REA documentation & guides
+        ├── README.md                          # Comprehensive REA usage & workflow guide
         ├── rules/AGENTS.md                    # Safety, prompt-injection defense, & evidence rules
         ├── agents/rea-reverse-engineer.md     # Autonomous reverse-engineering subagent
         └── skills/                            # Categorized Skills Database (7 Skills + 6 Guides)
@@ -58,116 +58,35 @@ antigravity-plugins/
 
 ---
 
-## 🚀 How to Install Plugins on Local User
+## 🚀 How to Install Plugins
 
-> [!NOTE]
-> All paths in this guide use standard system environment variables (`$env:USERPROFILE`, `%USERPROFILE%`, `$HOME`, `~`) to ensure privacy and cross-platform compatibility without hardcoding local usernames.
+Installing any plugin in Antigravity is as simple as copying the plugin folder into your Antigravity user plugins directory.
 
-### Prerequisites
+### Step 1: Copy the plugin folder
 
-1. **Google Antigravity** installed and configured.
-2. **Node.js** version `22.19.0` or higher (required for executing MCP tools).
-   ```bash
-   node --version
-   ```
+Copy any plugin folder you want from `plugins/` (for example, `plugins/rea`, `plugins/nuxt`, or `plugins/nuxt-ui`) into:
 
----
+📁 **`.gemini` ➔ `config` ➔ `plugins`** in your user home directory:
 
-### Option A: Install a Specific Plugin
+- **Windows**: `%USERPROFILE%\.gemini\config\plugins\` (or `C:\Users\<your-username>\.gemini\config\plugins\`)
+- **macOS / Linux**: `~/.gemini/config/plugins/` (or `$HOME/.gemini/config/plugins/`)
 
-#### Windows (PowerShell)
+*(If the `plugins` folder does not exist yet inside `.gemini/config/`, simply create it.)*
 
-Run PowerShell and copy the target plugin from this repository into your Antigravity user plugins directory:
+### Step 2: Restart Antigravity
 
-```powershell
-# Define target plugin name: "nuxt", "nuxt-ui", or "rea"
-$PluginName = "rea"
+Restart Antigravity (or reopen your workspace). Antigravity will automatically detect the plugin, register its MCP server, and activate its subagents and skills.
 
-# Target user directory
-$Destination = "$env:USERPROFILE\.gemini\config\plugins\$PluginName"
+### Step 3: That's it!
 
-# Create destination directory
-New-Item -ItemType Directory -Path $Destination -Force | Out-Null
-
-# Copy plugin contents
-Copy-Item -Path ".\plugins\$PluginName\*" -Destination $Destination -Recurse -Force
-
-Write-Host "Plugin '$PluginName' installed successfully to: $Destination" -ForegroundColor Green
-```
-
-#### Windows (Command Prompt)
-
-```cmd
-set PLUGIN_NAME=rea
-set DEST="%USERPROFILE%\.gemini\config\plugins\%PLUGIN_NAME%"
-
-mkdir %DEST%
-xcopy /E /I /Y "plugins\%PLUGIN_NAME%\*" %DEST%
-```
-
-#### macOS & Linux (Bash / Zsh)
-
-```bash
-PLUGIN_NAME="rea"
-DEST="$HOME/.gemini/config/plugins/$PLUGIN_NAME"
-
-mkdir -p "$DEST"
-cp -r "./plugins/$PLUGIN_NAME/"* "$DEST/"
-
-echo "Plugin '$PluginName' installed successfully to: $DEST"
-```
-
----
-
-### Option B: Install All Plugins at Once
-
-#### Windows (PowerShell)
-
-```powershell
-$SourcePlugins = ".\plugins"
-$DestBase = "$env:USERPROFILE\.gemini\config\plugins"
-
-Get-ChildItem -Path $SourcePlugins -Directory | ForEach-Object {
-    $TargetDir = Join-Path $DestBase $_.Name
-    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
-    Copy-Item -Path (Join-Path $_.FullName "*") -Destination $TargetDir -Recurse -Force
-    Write-Host "Installed: $($_.Name)" -ForegroundColor Cyan
-}
-
-Write-Host "All plugins successfully installed!" -ForegroundColor Green
-```
-
-#### macOS & Linux (Bash / Zsh)
-
-```bash
-DEST_BASE="$HOME/.gemini/config/plugins"
-mkdir -p "$DEST_BASE"
-
-for plugin in ./plugins/*/; do
-    plugin_name=$(basename "$plugin")
-    target="$DEST_BASE/$plugin_name"
-    mkdir -p "$target"
-    cp -r "$plugin"* "$target/"
-    echo "Installed: $plugin_name"
-done
-
-echo "All plugins successfully installed!"
-```
-
----
-
-## 🔄 Post-Installation & Reloading
-
-1. **Avoid MCP Collisions**: If you previously had a standalone manual entry in your global `mcp_config.json` for an installed plugin, remove it. Antigravity manages each plugin's `mcp_config.json` automatically.
-2. **Reload Antigravity**: Restart the Antigravity application or reload the workspace window.
-3. **Verify Installation**: Open the Customizations menu in Antigravity to view the newly loaded plugins, active subagents, and skills.
+Your plugin is now active! You can view, enable, or disable installed plugins anytime from the **Customizations** page in Antigravity.
 
 ---
 
 ## 🛡️ Privacy & Security
 
-- **Zero Local Footprint**: Repository configuration and installation scripts rely strictly on standard relative paths and OS environment variables.
-- **Untrusted Target Isolation**: Built-in agent rules enforce that decompiled target code, strings, and network payloads are treated purely as data, preventing prompt-injection attacks.
+- **Zero Local Footprint**: Repository configuration and instructions rely strictly on relative paths and user home placeholders (`~/.gemini/` or `%USERPROFILE%`), keeping your local environment completely private.
+- **Untrusted Target Isolation**: Built-in agent rules enforce that decompiled target code, strings, and network payloads are treated purely as inert data, preventing prompt-injection attacks.
 
 ---
 
