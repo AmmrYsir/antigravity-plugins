@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+  <defs>
+    <linearGradient id="nuxtGradient" x1="28" y1="28" x2="228" y2="228" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00DC82"/>
+      <stop offset="100%" stop-color="#36E4DA"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#18181B" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#09090B" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- 10% margin padding: content sits inside 26px - 230px -->
+  <rect x="28" y="28" width="200" height="200" rx="44" fill="url(#cardGrad)" stroke="url(#nuxtGradient)" stroke-width="4"/>
+
+  <!-- UI Window Header / Dots -->
+  <circle cx="60" cy="62" r="5" fill="#EF4444" opacity="0.85"/>
+  <circle cx="76" cy="62" r="5" fill="#F59E0B" opacity="0.85"/>
+  <circle cx="92" cy="62" r="5" fill="#10B981" opacity="0.85"/>
+
+  <!-- Nuxt Dual Mountain / Triangle Glyphs styled as UI Component Layers -->
+  <!-- Left Mountain / Block -->
+  <path d="M 64 180 L 110 102 C 113 97 121 97 124 102 L 152 150 L 134 180 Z" 
+        fill="url(#nuxtGradient)" 
+        opacity="0.95"/>
+  
+  <!-- Right Mountain / Block -->
+  <path d="M 134 180 L 166 124 C 169 119 177 119 180 124 L 208 174 C 211 180 206 186 199 186 L 85 186 C 76 186 73 175 79 171 Z" 
+        fill="url(#nuxtGradient)" 
+        filter="url(#glow)"/>
+
+  <!-- UI Component Accents (Toggle / Button pill on top right) -->
+  <rect x="156" y="55" width="42" height="14" rx="7" fill="#27272A" stroke="#00DC82" stroke-width="2"/>
+  <circle cx="188" cy="62" r="5" fill="#00DC82"/>
+</svg>

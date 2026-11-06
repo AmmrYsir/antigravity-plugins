@@ -1,5 +1,5 @@
 {
-  "name": "rea-plugin",
+  "name": "rea",
   "displayName": "REA - Reverse Engineer Anything",
   "version": "1.0.0",
   "description": "Comprehensive reverse-engineering toolkit and skills database for Antigravity, connecting to REA (morluto/rea) with 200+ analysis tools across native, JS/Electron, Android, web, and runtime targets.",

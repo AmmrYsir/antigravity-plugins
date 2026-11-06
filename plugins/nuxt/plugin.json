@@ -1,0 +1,18 @@
+{
+  "name": "nuxt",
+  "displayName": "Nuxt",
+  "version": "1.0.0",
+  "description": "Official Nuxt framework integration: explore Nuxt 4/3 docs, discover community modules, configure Nitro server routes, and check deployment providers via MCP.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Search Nuxt 4 documentation for server routes and data fetching with useFetch",
+    "List top Nuxt modules for authentication, state management, and SEO",
+    "Find deployment guidelines for hosting a Nuxt app on Cloudflare or Vercel"
+  ],
+  "author": {
+    "name": "Antigravity",
+    "url": "https://nuxt.com"
+  },
+  "homepage": "https://nuxt.com",
+  "repository": "https://github.com/nuxt/nuxt"
+}

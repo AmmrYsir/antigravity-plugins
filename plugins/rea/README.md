@@ -90,7 +90,7 @@ Open PowerShell and copy this plugin repository into your user plugins folder:
 
 ```powershell
 # Define target destination
-$Destination = "$env:USERPROFILE\.gemini\config\plugins\rea-plugin"
+$Destination = "$env:USERPROFILE\.gemini\config\plugins\rea"
 
 # Create target directory if it does not exist
 New-Item -ItemType Directory -Path $Destination -Force | Out-Null
@@ -104,7 +104,7 @@ Write-Host "REA plugin successfully copied to: $Destination" -ForegroundColor Gr
 #### On Windows (Command Prompt)
 
 ```cmd
-set DEST="%USERPROFILE%\.gemini\config\plugins\rea-plugin"
+set DEST="%USERPROFILE%\.gemini\config\plugins\rea"
 mkdir %DEST%
 xcopy /E /I /Y * %DEST%
 ```
@@ -115,7 +115,7 @@ Open your terminal and copy this plugin repository into your user configuration 
 
 ```bash
 # Define target destination
-DEST="$HOME/.gemini/config/plugins/rea-plugin"
+DEST="$HOME/.gemini/config/plugins/rea"
 
 # Create destination directory
 mkdir -p "$DEST"
@@ -132,16 +132,16 @@ echo "REA plugin successfully copied to: $DEST"
 
 If you prefer to keep this plugin scoped only to a specific project:
 
-1. Create a `.gemini/plugins/rea-plugin/` directory in your project's root:
+1. Create a `.gemini/plugins/rea/` directory in your project's root:
    - Windows (PowerShell):
      ```powershell
-     New-Item -ItemType Directory -Path ".\.gemini\plugins\rea-plugin" -Force
-     Copy-Item -Path ".\*" -Destination ".\.gemini\plugins\rea-plugin" -Recurse -Force
+     New-Item -ItemType Directory -Path ".\.gemini\plugins\rea" -Force
+     Copy-Item -Path ".\*" -Destination ".\.gemini\plugins\rea" -Recurse -Force
      ```
    - macOS & Linux:
      ```bash
-     mkdir -p ./.gemini/plugins/rea-plugin
-     cp -r ./* ./.gemini/plugins/rea-plugin/
+     mkdir -p ./.gemini/plugins/rea
+     cp -r ./* ./.gemini/plugins/rea/
      ```
 
 ---

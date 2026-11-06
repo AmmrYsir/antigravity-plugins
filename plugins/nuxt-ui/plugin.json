@@ -1,0 +1,18 @@
+{
+  "name": "nuxt-ui",
+  "displayName": "Nuxt UI",
+  "version": "1.0.0",
+  "description": "Official Nuxt UI integration: discover components, fetch live schemas, search icons, and build Vue/Nuxt interfaces with real-time MCP tooling.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Search Nuxt UI components for a responsive data table with sorting and pagination",
+    "Get component metadata and props for Nuxt UI Form and Modal",
+    "Look up Lucide icon names using the Nuxt UI icon search tool"
+  ],
+  "author": {
+    "name": "Antigravity",
+    "url": "https://ui.nuxt.com"
+  },
+  "homepage": "https://ui.nuxt.com",
+  "repository": "https://github.com/nuxt/ui"
+}
