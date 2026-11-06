@@ -1,0 +1,17 @@
+{
+  "name": "rea-plugin",
+  "displayName": "REA - Reverse Engineer Anything",
+  "version": "1.0.0",
+  "description": "Comprehensive reverse-engineering toolkit and skills database for Antigravity, connecting to REA (morluto/rea) with 200+ analysis tools across native, JS/Electron, Android, web, and runtime targets.",
+  "author": "morluto",
+  "homepage": "https://github.com/morluto/rea",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/morluto/rea"
+  },
+  "suggestedPrompts": [
+    "Analyze this compiled binary and summarize its functions, strings, and security mitigations",
+    "Decompile and inspect the unpacked Electron or JavaScript ASAR bundle and map its components",
+    "Inspect the Android APK manifest, exported components, permissions, and decompiled classes"
+  ]
+}
