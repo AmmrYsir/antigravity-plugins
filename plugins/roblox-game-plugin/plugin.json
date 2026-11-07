@@ -1,0 +1,23 @@
+{
+  "name": "roblox-game-plugin",
+  "displayName": "Roblox Game Development",
+  "version": "1.0.0",
+  "description": "Comprehensive Roblox game development suite with Luau architecture patterns, game scaffolds (Simulators, Tycoons, RPGs, Obbies, Battle Royale), security hardening, monetization auditing, and MCP Studio integration.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Scaffold a new Roblox simulator game with pets, zones, and leaderboards",
+    "Audit my DataStore and RemoteEvent architecture for security vulnerabilities",
+    "Help me design and optimize Luau game loops and combat networking"
+  ],
+  "keywords": [
+    "roblox",
+    "luau",
+    "gamedev",
+    "roblox-studio",
+    "mcp",
+    "simulator",
+    "tycoon",
+    "obby",
+    "datastore"
+  ]
+}

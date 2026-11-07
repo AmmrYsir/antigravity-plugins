@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2231A"/>
+      <stop offset="100%" stop-color="#930D06"/>
+    </linearGradient>
+    <linearGradient id="cubeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#DCDCDC"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded box -->
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#bgGrad)"/>
+  <!-- Tilted Roblox-style square cube icon -->
+  <g transform="translate(64,64) rotate(-15)">
+    <polygon points="-28,-28 28,-28 28,28 -28,28" fill="url(#cubeGrad)"/>
+    <polygon points="-10,-10 10,-10 10,10 -10,10" fill="url(#bgGrad)"/>
+  </g>
+</svg>
