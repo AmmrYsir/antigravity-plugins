@@ -1,0 +1,21 @@
+{
+  "name": "blender",
+  "displayName": "Blender 3D",
+  "version": "1.0.0",
+  "description": "Official Blender 3D integration: inspect scenes, execute procedural BMesh/Python modeling scripts, configure materials and lighting, render viewports, and search Blender API & manual docs via MCP.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Inspect the active Blender scene and summarize all collections, objects, materials, and modifiers",
+    "Generate a procedural 3D architectural asset or faceted low-poly character using BMesh and studio lighting",
+    "Search the bundled Blender Python API reference and user manual for bmesh, modifiers, or shader nodes"
+  ],
+  "author": {
+    "name": "Blender Lab",
+    "url": "https://www.blender.org/lab/mcp-server/"
+  },
+  "homepage": "https://www.blender.org/lab/mcp-server/",
+  "repository": {
+    "type": "git",
+    "url": "https://projects.blender.org/lab/blender_mcp"
+  }
+}
