@@ -1,0 +1,21 @@
+{
+  "name": "meshy",
+  "displayName": "Meshy 3D AI",
+  "version": "0.6.9",
+  "description": "Meshy AI 3D generation platform: text-to-3D, image-to-3D, Smart Topology, PBR texturing, character auto-rigging & animation, and 3D printing preparation via MCP.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Check my Meshy credit balance and list recent 3D models",
+    "Generate a game-ready 3D character with Smart Topology and rigging",
+    "Convert a 2D image into a 3D model and prepare it for multicolor 3D printing"
+  ],
+  "author": {
+    "name": "Meshy AI",
+    "url": "https://www.meshy.ai"
+  },
+  "homepage": "https://www.meshy.ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/meshy-dev/meshy-mcp-server"
+  }
+}
