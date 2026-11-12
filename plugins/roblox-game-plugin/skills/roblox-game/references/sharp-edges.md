@@ -27,6 +27,10 @@
 | SE-10 | Low      | Deprecated wait()/spawn()/delay()          |
 | SE-11 | Medium   | Infinite Yield Warning                     |
 | SE-12 | Low      | String Patterns vs Regex                   |
+| SE-13 | High     | WedgePart Orientation & CFrame Axis Traps  |
+| SE-14 | High     | ChangeHistoryService Recording Lockout     |
+| SE-15 | Medium   | 4x4x4 Voxel Light Leaks & Z-Fighting       |
+| SE-16 | Medium   | OBB vs Axis-Aligned Bounds Validation Bug  |
 
 ---
 
@@ -1199,6 +1203,146 @@ print(pct) -- "20"
 
 ---
 
+## SE-13 | High | WedgePart Orientation & CFrame Axis Traps
+
+### Description
+
+Informal memory of `WedgePart` axes frequently swaps Front (`-Z`) and Back (`+Z`), and stacking `CFrame.Angles` (`XYZ` Euler order) with world-axis `Size` vectors causes inverted gables, outward-projecting roof wings, and 90-degree rotated fence or beam spans.
+
+### Symptoms
+
+- Gable pediments (`WedgePart`) point outward past walls ("airplane wings") while leaving V-shaped holes under roof ridges.
+- Multi-axis `CFrame.Angles(rx, ry, rz)` rotations drift relative to Roblox `BasePart.Orientation` (`YXZ` order).
+- Spans sized along `Size.X` rotated by `CFrame.Angles(0, math.rad(90), 0)` shoot perpendicular to the intended perimeter.
+
+### Solution
+
+- At `Orientation = (0, 0, 0)` (`LookVector = -Z`, `UpVector = +Y`, `RightVector = +X`), a `WedgePart` has its **flat base at `-Y`**, **low thin edge at `-Z` (`Front`)**, and **tall vertical wall at `+Z` (`Back`)**; the slope rises from `-Z` to `+Z`. Rotate `CFrame.Angles(0, math.rad(180), 0)` to flip tall to `-Z`.
+- Run a 2-point Luau raycast sanity check using `Enum.RaycastFilterType.Include` on one scratch wedge before instantiating a multi-wedge roof/gable array.
+- Use `CFrame.fromOrientation(rx, ry, rz)` (`YXZ` order, matching `BasePart.Orientation`) and align span length with `Size.Z` when using `CFrame.lookAt` (`LookVector = -Z`).
+
+### Code Example
+
+```luau
+-- Verify WedgePart slope direction in Studio before placing roof gables
+local w = Instance.new("WedgePart")
+w.Size = Vector3.new(2, 6, 10)
+w.CFrame = CFrame.new(0, 3, 0) -- Orientation = (0, 0, 0)
+w.Anchored = true
+w.Parent = workspace
+
+local rp = RaycastParams.new()
+rp.FilterType = Enum.RaycastFilterType.Include
+rp.FilterDescendantsInstances = { w }
+
+local rLow = workspace:Raycast(Vector3.new(0, 10, -4), Vector3.new(0, -20, 0), rp)
+local rHigh = workspace:Raycast(Vector3.new(0, 10, 4), Vector3.new(0, -20, 0), rp)
+w:Destroy()
+-- At Orientation = (0, 0, 0): rLow.Position.Y ≈ 0.60 (-Z), rHigh.Position.Y ≈ 5.40 (+Z)
+```
+
+---
+
+## SE-14 | High | ChangeHistoryService Recording Lockout
+
+### Description
+
+Calling `ChangeHistoryService:FinishRecording(nil, ...)` or leaving an active recording open when an `execute_luau` script errors locks out future `TryBeginRecording` calls until Roblox Studio restarts. Legacy `:SetWaypoint()` is also deprecated in favor of explicit recording transactions.
+
+### Symptoms
+
+- Subsequent `TryBeginRecording(...)` calls silently return `nil`, breaking Ctrl+Z undo across Studio edits.
+- Destructive programmatic builds cannot be undone cleanly as a single step.
+
+### Solution
+
+Always wrap Edit-mode mutations in `TryBeginRecording(name, displayName)` + `pcall`, check `if recId then`, and pass `Enum.FinishRecordingOperation.Cancel` whenever `ok == false`.
+
+### Code Example
+
+```luau
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
+local recId = ChangeHistoryService:TryBeginRecording("Build_Zone", "Build Zone Geometry")
+
+local ok, err = pcall(function()
+    -- Build off-tree, configure properties, then parent chunks
+end)
+
+if recId then
+    ChangeHistoryService:FinishRecording(
+        recId,
+        if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
+    )
+end
+if not ok then
+    error(err)
+end
+```
+
+---
+
+## SE-15 | Medium | 4x4x4 Voxel Light Leaks & Z-Fighting at Y = 0
+
+### Description
+
+Roblox Studio evaluates lighting using `4x4x4` stud voxel grids alongside shadow maps. Walls or roofs thinner than `1` stud or butt-joined at exact coordinates leak sunlight and sky gaps. Meanwhile, stacking ground slabs, `Baseplate` (`Y = 0`), floor tiles, and markings on coplanar planes causes Z-fighting flicker.
+
+### Symptoms
+
+- Bright sky slits or light bleed visible from inside rooms along roof eaves and door tracks.
+- Continuous perimeter curbs or wall bases clipping through personnel doorways.
+- Shimmering floor textures where asphalt, `Baseplate`, and interior tiles share `Y = 0`.
+
+### Solution
+
+- Keep exterior walls and roofs `>= 1` stud thick (`1.5–2.0+` studs recommended), overlap wall tops `0.5–1.5` studs into roof undersides, and overlap bay piers `+0.2–0.4` studs into door frames.
+- Split continuous curbs and base walls around every doorway and add an overhead lintel.
+- Offset coplanar visible faces by `>= 0.005–0.01` studs (`0.02–0.05` practical floor/marking separation) and move or disable conflicting `Baseplate` definitions in Rojo `default.project.json`.
+
+### Code Example
+
+```luau
+-- Offset floor overlay & doorway curb split (floor datum Y = 0)
+local floorTile = Instance.new("Part")
+floorTile.Size = Vector3.new(75, 0.2, 35)
+floorTile.CFrame = CFrame.new(-52.5, 0.12, 17.5) -- bottom at Y = 0.02 (avoids Y = 0 Z-fighting)
+floorTile.Anchored = true
+```
+
+---
+
+## SE-16 | Medium | OBB vs Axis-Aligned Bounds Validation Bug
+
+### Description
+
+Spatial verification scripts that compute `p.Position ± p.Size / 2` assume zero rotation (`CFrame` identity). Rotated walls, fences, and wedges report completely wrong bounding boxes and falsely pass automated validation.
+
+### Symptoms
+
+- 90-degree rotated fence rails or inverted roof wedges pass automated bounds scripts while visibly broken in Studio.
+- Skipped `screen_capture` reviews allow obvious geometric defects to reach production.
+
+### Solution
+
+Project local half-extents through the `CFrame` rotation matrix via `CFrame:GetComponents()` (`abs(R) * halfSize`), combine numeric checks with `workspace:GetPartBoundsInBox` doorway clearance and interior raycast probes, and require multi-angle `screen_capture` inspection.
+
+### Code Example
+
+```luau
+local function getPartWorldAABB(p: BasePart): (Vector3, Vector3)
+    local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = p.CFrame:GetComponents()
+    local h = p.Size * 0.5
+    local hx = math.abs(r00) * h.X + math.abs(r01) * h.Y + math.abs(r02) * h.Z
+    local hy = math.abs(r10) * h.X + math.abs(r11) * h.Y + math.abs(r12) * h.Z
+    local hz = math.abs(r20) * h.X + math.abs(r21) * h.Y + math.abs(r22) * h.Z
+    local pos = Vector3.new(x, y, z)
+    local ext = Vector3.new(hx, hy, hz)
+    return pos - ext, pos + ext
+end
+```
+
+---
+
 ## Quick Reference: Severity at a Glance
 
 ```
@@ -1211,12 +1355,16 @@ HIGH (fix in current sprint):
   SE-4  Undisconnected events            → Trove/Maid pattern
   SE-5  RemoteEvent flooding             → Per-player rate limiter
   SE-6  BindToClose 30s timeout          → Parallel saves with task.spawn
+  SE-13 WedgePart / CFrame axis traps    → -Z low / +Z tall + raycast pre-check
+  SE-14 ChangeHistoryService lockout     → TryBeginRecording + pcall + Commit/Cancel
 
 MEDIUM (fix before scale):
   SE-7  Mobile part count                → StreamingEnabled + <10K parts
   SE-8  Yielding in module require       → Init/Start lifecycle pattern
   SE-9  Table # with nil gaps            → table.remove or explicit length
   SE-11 Infinite yield WaitForChild      → Always pass timeout parameter
+  SE-15 Voxel light leaks & Z-fighting   → >= 1 stud walls, overlaps, >= 0.01 offset
+  SE-16 OBB vs AABB bounds blindness     → CFrame:GetComponents() + screen_capture
 
 LOW (fix when convenient):
   SE-10 Deprecated wait/spawn/delay      → task.wait/spawn/delay

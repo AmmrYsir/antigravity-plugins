@@ -4,138 +4,80 @@
 
 Load this reference whenever performing any of the following:
 
-- **MCP operations** — executing Luau code, reading/writing instances, managing assets via MCP tools
-- **Autonomous building** — scaffolding game structure, generating systems, iterating on builds
-- **Debugging via Studio** — reading console output, tracing errors, applying fixes in-place
-- **Project exploration** — understanding an existing place file's architecture and script layout
-
-This reference defines how the AI agent detects, selects, and orchestrates MCP tools to drive Roblox Studio directly.
+- **MCP operations** — executing Luau code, editing scripts atomically, reading/inspecting DataModel instances, managing assets, or capturing Studio views via the `Roblox_Studio` MCP proxy
+- **Autonomous building** — scaffolding game systems, generating 3D geometry/scenes, and iterating safely in Edit mode
+- **Debugging via Studio** — reading console output, tracing runtime errors, and applying fixes in-place
+- **Project exploration** — mapping an unfamiliar place's instance hierarchy and script layout
 
 ---
 
-## MCP Detection
+## MCP Detection & Session Initialization
 
-On every session start or when Studio interaction is requested, detect which MCP server is available by probing for characteristic tool names.
+On every session start or when Studio interaction is requested, verify whether the active **38-tool `Roblox_Studio` MCP proxy** is connected:
 
-### Community Server (boshyxd/robloxstudio-mcp)
+### Studio MCP Mode (Official `Roblox_Studio` MCP Proxy — 38 Tools)
 
-**Detect by looking for these tools:** `execute_luau`, `get_file_tree`, `grep_scripts`, `create_build`, `search_objects`, `get_instance_properties`, `get_script_source`
+**Detect by checking for:** `list_roblox_studios`, `get_studio_state`, `execute_luau`, `multi_edit`, `search_game_tree`, `inspect_instance`, `screen_capture`
 
-If any of these tools are present, operate in **Full Mode** (39 tools).
+**Mandatory Session Handshake (Every Task):**
+1. Call `list_roblox_studios()` (`required: []`) to discover open Studio instances (`id`, `name`, `mode`, `state`, `persistedToCloud`, `placeId`, `universeId`, `file`). Confirm with the user if multiple places are open; **`studio_id` is required on all 37 remaining tools**—never hardcode a `studio_id` or spawn `StudioMCP.exe` directly via CLI scripts.
+2. Call `get_studio_state(studio_id)` to verify available `datamodel_type` values (`"Edit"`, `"Client"`, `"Server"`). Use `start_stop_play(is_start, studio_id)` to switch between Edit and Play modes cleanly.
 
-### Official Server (Roblox/studio-rust-mcp-server)
+### Offline Mode
 
-**Detect by looking for these tools:** `run_code`, `insert_model`, `get_console_output`, `start_stop_play`, `run_script_in_play_mode`, `get_studio_mode`
-
-If these tools are present but community tools are not, operate in **Standard Mode** (6 tools).
-
-### No MCP Tools Detected
-
-If neither server's tools are available, operate in **Offline Mode** — generate copy-paste Luau code and filesystem structures instead.
-
-### Detection Priority
-
-If both servers are detected, prefer the **Community Server** for its broader toolset. Fall back to individual Official Server tools only when a community equivalent is unavailable or failing.
+When no Studio MCP tools are connected, operate in **Offline Mode** — generate copy-paste-ready Luau scripts or Rojo filesystem structures (`default.project.json` + `src/`).
 
 ---
 
-## Full Mode (Community Server — 39 Tools)
+## Active `Roblox_Studio` MCP Toolset (38 Tools)
 
-### Exploration
+### Session, Mode & Persistence
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `get_file_tree` | Returns the full instance hierarchy of the place | First step in any project exploration; understanding overall structure |
-| `get_project_structure` | Returns a higher-level structural overview | Quick orientation before diving into specifics |
-| `search_objects` | Find instances by name or class across the tree | Locating specific parts, models, scripts, or UI elements |
-| `get_instance_properties` | Read all properties of a specific instance | Inspecting configuration, checking values before modification |
-| `get_instance_children` | List direct children of an instance | Navigating the hierarchy incrementally |
-| `grep_scripts` | Search across all scripts for a pattern | Finding references, tracing function calls, locating bugs |
-| `get_script_source` | Read the full source of a specific script | Understanding implementation before editing |
-| `search_by_property` | Find instances matching a property value | Locating all anchored parts, all red-colored bricks, etc. |
-| `get_class_info` | Get Roblox API info for a class | Checking available properties/methods before writing code |
-| `get_selection` | Get the currently selected instance(s) in Studio | Context-aware operations on what the user has selected |
+| Tool | Purpose | Key Rules |
+| :--- | :--- | :--- |
+| `list_roblox_studios` | List connected Studio instances and retrieve `studio_id` | Call first; match target by `name`, `placeId`, or `file`. |
+| `get_studio_state` | Inspect current play state and valid `datamodel_type` values | Call before mode-sensitive operations. |
+| `start_stop_play` | Start (`is_start: true`) or stop (`is_start: false`) playtesting | Stop playtesting before Edit-mode script or world edits. |
+| `save_place` | Ctrl+S save (cloud version or local `.rbxl`/`.rbxlx`); never publishes | Save only at verified milestones or user request; cloud saves create place versions. |
 
-### Building
+### Exploration & Script Inspection
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `execute_luau` | Run arbitrary Luau code inside Studio | The primary workhorse — create instances, modify properties, run any logic |
-| `create_build` | Generate a structured build from a specification | Scaffolding rooms, maps, or complex instance trees from a plan |
-| `import_build` | Import a previously exported build | Restoring saved structures or applying templates |
-| `export_build` | Export a subtree to a reusable format | Saving work for reuse, creating templates, backing up before changes |
-| `import_scene` | Import a complete scene definition | Loading pre-built environments or level layouts |
+| Tool | Purpose | Key Rules |
+| :--- | :--- | :--- |
+| `search_game_tree` | Flat JSON exploration of DataModel (`datamodel_type`: `Edit`/`Client`/`Server`) | Filter by `path`, `instance_type` (`IsA`), `keywords`; `max_depth` default 3/max 10; `head_limit` default 200. Rejects `"Edit"` during playtest. |
+| `inspect_instance` | Detailed properties (`CFrame.Position`, `CFrame.Rotation`), attributes, child counts | Dot-notation `path`; caps multi-match at 20. |
+| `script_read` | Read script source with line numbers (`target_file` dot path) | Supports line ranges (`should_read_entire_file: false`). |
+| `script_search` | Fuzzy search against script names (`keywords`) | Capped at 10 results; no wildcards. |
+| `script_grep` | Search string/Luau pattern across all script sources (`query`) | Capped at 50 matches. |
+| `get_console_output` | Read Studio output log (`studio_id`) | Capture runtime errors, warnings, and print traces. |
 
-### Testing
+### Execution, Script Editing & Built-In Helpers
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `start_playtest` | Begin a playtest session in Studio | Validating changes, testing gameplay, triggering runtime behavior |
-| `stop_playtest` | End the current playtest session | After gathering output or when done testing |
-| `get_playtest_output` | Read console/output from the playtest | Checking for errors, reading print statements, validating behavior |
+| Tool | Purpose | Key Rules |
+| :--- | :--- | :--- |
+| `execute_luau` | Execute Luau on Studio main thread (`datamodel_type`: `Edit`/`Client`/`Server`) | Blocks Studio until yield. Split bulk work into chunks (~500–1,000 items), build off-tree, assign properties before `.Parent`, and `task.wait()` once per chunk. |
+| `multi_edit` | Atomic multi-edit or creation (`className`) of scripts (`datamodel_type: ["Edit"]`) | Exact `old_string` match (`""` for new script content); respect Rojo ownership when `default.project.json` manages `src/`. |
+| `subagent` | Built-in Studio subagent (`explore`, `screen_capture`, `unit_test`) | Autonomous exploration, visual capture, or ModuleScript unit tests. |
+| `skill` | Retrieve built-in Roblox Studio skill guides | 13 skills incl. `rbx-docs-search`, `rbx-scene-analysis`, `rbx-import-asset`, `rbx-debug`, `rbx-perf-profiling`, `rbx-unit-test`, `rbx-device-simulator-lua`, `rbx-network-simulator`, `rbx-permissions`, `rbx-open-cloud-usage`. |
+| `http_get` | Fetch official `create.roblox.com` `.md`/`llms.txt` or `github.com/Roblox/libmp` | Supports `query` + `context_lines` filtering. |
+| `open_cloud_invoke` | Authenticated Roblox Open Cloud API calls & asset uploads | Check scopes with `skill("rbx-permissions")` first. |
 
-### Assets (Creator Store)
+### Assets, Generative 3D & Visual Capture
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| Creator Store `search` | Search the Creator Store for models, audio, etc. | Finding assets to populate a scene |
-| Creator Store `details` | Get metadata for a specific asset | Checking asset info before insertion |
-| Creator Store `thumbnail` | Get the thumbnail/preview image of an asset | Visual verification before inserting |
-| Creator Store `insert` | Insert an asset from the Creator Store into the place | Adding models, meshes, audio, images, etc. |
-| Creator Store `preview` | Preview an asset before committing to insertion | Evaluating suitability |
+| Tool | Purpose | Key Rules |
+| :--- | :--- | :--- |
+| `search_asset` | Search Creator Store and user/group/universe inventory | Request explicit user consent before `insert_asset` across different owners. |
+| `insert_asset` | Insert asset by numeric `assetId` (`assetName`, `assetType`, `parentPath`) | Always pass `assetName` when known. |
+| `generate_procedural_model` | Primitive-part `ProceduralModel` with configurable attributes | Supports `async: true` -> `wait_job_finished`; `partNames` max 8. |
+| `generate_mesh` | Textured AI mesh (`maxTriangles` 12–20,000, `size`, `segmentation`) | Supports `async: true` -> `wait_job_finished`. |
+| `generate_texture` | Re-texture existing `MeshPart`/`Model` (`Fast` or `Quality`) | Resolves `instance_path` directly without live selection. |
+| `generate_material` | Create PBR `MaterialVariant` across 40 `BaseMaterial` enums | Assign returned `BaseMaterial` + `Name` to `BasePart.Material` and `MaterialVariant`. |
+| `generate_scene` | Populate models/parts from prompt or images within optional bbox | `useMeshGen` defaults to `true`. |
+| `segment_mesh` | Segment a `MeshPart`/`Model` (`parts` max 5) | Supports `async: true` -> `wait_job_finished`. |
+| `wait_job_finished` | Poll `jobId` returned by `async: true` generative calls | Default timeout 600s; call only when result is needed. |
+| `screen_capture` | Capture Edit-mode viewport image (`capture_id`, optional `camera_position`, `look_at_position`) | Mandatory for visual QA of 3D geometry and UI layouts. |
 
-### History
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `undo` | Undo the last change via ChangeHistoryService | Rolling back a mistake, reverting after a failed experiment |
-| `redo` | Redo a previously undone change | Re-applying a reverted change |
-
-### Bulk Operations
-
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| `mass_get_property` | Read a property from many instances at once | Auditing values across the place (e.g., all part sizes) |
-| Batch operations | Execute multiple related changes in sequence | Bulk renaming, bulk property updates, mass restructuring |
-
----
-
-## Standard Mode (Official Server — 6 Tools)
-
-When only the official Roblox MCP server is available, operate with this reduced but capable toolset.
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| `run_code` | Execute Lua/Luau code inside Studio | Equivalent to `execute_luau` — primary workhorse |
-| `insert_model` | Insert a model from the Creator Store | Takes an asset ID; inserts into Workspace by default |
-| `get_console_output` | Read Studio's output/console log | Use for error detection and debug loops |
-| `start_stop_play` | Toggle playtest mode on/off | Single tool handles both start and stop |
-| `run_script_in_play_mode` | Execute code during an active playtest | Automatically stops the playtest when the script finishes |
-| `get_studio_mode` | Check whether Studio is in Edit or Play mode | Always call before mode-sensitive operations |
-
-### Standard Mode Workflow Adaptations
-
-Since Standard Mode lacks exploration tools (`get_file_tree`, `grep_scripts`, etc.), compensate by:
-
-- Using `run_code` with scripts that traverse the DataModel and return structure as printed output
-- Reading `get_console_output` to capture the results of exploratory scripts
-- Building instance-search logic inline via `run_code` instead of relying on `search_objects`
-
-Example — exploring structure in Standard Mode:
-
-```lua
--- Run via run_code to mimic get_file_tree
-local function printTree(instance, indent)
-    indent = indent or 0
-    print(string.rep("  ", indent) .. instance.ClassName .. ": " .. instance.Name)
-    for _, child in ipairs(instance:GetChildren()) do
-        printTree(child, indent + 1)
-    end
-end
-printTree(game)
-```
-
-Then read the output via `get_console_output`.
+*(Additional specialized tools: `auto_setup_avatar`, `generate_avatar`, `generate_animation`, `character_navigation`, `user_keyboard_input`, `user_mouse_input`, `store_image`, `upload_image`, `create_skill`, `edit_skill`, `list_skills`, `submit_feedback`.)*
 
 ---
 
@@ -147,7 +89,7 @@ When no MCP server is connected, generate self-contained Luau code blocks that t
 
 Always include clear placement instructions:
 
-```
+```luau
 -- ==============================================
 -- SCRIPT: WeaponSystem
 -- PLACE IN: ServerScriptService
@@ -161,7 +103,7 @@ return WeaponSystem
 
 ### For Rojo Users
 
-When the user mentions Rojo, Wally, or a filesystem-based workflow, output a directory structure:
+When the user uses Rojo, Wally, or a filesystem-based workflow, respect `default.project.json` boundaries:
 
 ```
 src/
@@ -177,14 +119,14 @@ src/
 └── default.project.json
 ```
 
-Include the `default.project.json` mapping when creating new projects or restructuring existing ones.
+Include `"$ignoreUnknownInstances": true` on `Workspace` in `default.project.json` whenever Studio-built 3D geometry coexists with Rojo-synced scripts.
 
 ### Offline Conventions
 
 - Label every script block with its target service/folder
 - Use `ModuleScript`, `Script`, or `LocalScript` type annotations
 - Group related scripts together with a section header
-- Provide a setup checklist at the end listing manual steps (e.g., "Create a RemoteEvent named 'DamageEvent' in ReplicatedStorage")
+- Provide a setup checklist listing manual steps (e.g., creating `RemoteEvent` instances in `ReplicatedStorage`)
 
 ---
 
@@ -192,35 +134,28 @@ Include the `default.project.json` mapping when creating new projects or restruc
 
 ### Autonomous Build
 
-A full build cycle from specification to working game systems.
+A full build cycle from specification to working game systems or 3D environments.
 
 ```
-1. SCAFFOLD
-   ├── get_file_tree / get_project_structure  →  understand current state
-   ├── Plan instance hierarchy based on requirements
-   └── create_build / execute_luau  →  create folder structure and placeholder instances
+1. DISCOVER & PLAN
+   ├── list_roblox_studios + get_studio_state  →  confirm studio_id and "Edit" mode
+   ├── search_game_tree(datamodel_type="Edit") + inspect_instance  →  map current state
+   └── Check default.project.json for Rojo-owned paths before mutating scripts or Workspace
 
-2. GENERATE CORE SYSTEMS
-   ├── For each system (e.g., combat, inventory, UI):
-   │   ├── Generate server scripts  →  execute_luau to create and populate Script instances
-   │   ├── Generate client scripts  →  execute_luau to create and populate LocalScript instances
-   │   └── Generate shared modules  →  execute_luau to create and populate ModuleScript instances
-   └── Wire up RemoteEvents/RemoteFunctions between client and server
+2. BUILD SYSTEMS & GEOMETRY
+   ├── Scripts (non-Rojo): multi_edit(datamodel_type="Edit", className=...)
+   ├── Scripts (Rojo-managed): write/edit local src/*.luau files on disk
+   └── 3D Geometry: execute_luau(datamodel_type="Edit") wrapped in ChangeHistoryService
+       TryBeginRecording/FinishRecording (chunked ~500–1,000 parts off-tree + task.wait())
 
-3. INSERT ASSETS
-   ├── Search Creator Store for needed models/audio
-   └── Insert and position assets in the scene
+3. ASSETS & MATERIALS
+   ├── search_asset / insert_asset (confirm cross-owner inventory inserts)
+   └── generate_material / generate_mesh / generate_procedural_model (async + wait_job_finished)
 
-4. TEST
-   ├── start_playtest
-   ├── get_playtest_output  →  read console for errors
-   └── stop_playtest
-
-5. FIX & ITERATE
-   ├── grep_scripts to find error source
-   ├── get_script_source to read the problematic script
-   ├── execute_luau to apply the fix
-   └── Return to step 4 (max 5 iterations)
+4. VERIFY (NUMERIC + VISUAL + PLAYTEST)
+   ├── 3D Scenes: OBB bounds/clearance/raycast audit + multi-angle screen_capture
+   ├── Gameplay: start_stop_play(is_start=true)  →  get_console_output  →  start_stop_play(is_start=false)
+   └── Fix issues via multi_edit / execute_luau and re-verify (max 5 iterations)
 ```
 
 ### Debug Loop
@@ -229,77 +164,72 @@ Systematic error resolution with bounded retries.
 
 ```
 1. DETECT
-   ├── get_console_output / get_playtest_output  →  capture errors
-   └── Parse error messages for script name, line number, error type
+   ├── get_console_output(studio_id)  →  capture errors & stack traces
+   └── Parse script path, line number, and failure type
 
 2. LOCATE
-   ├── grep_scripts with error-related keywords
-   ├── get_script_source for the identified script
-   └── Analyze surrounding code for root cause
+   ├── script_grep / script_search  →  find symbol or script path
+   ├── script_read(target_file=...)  →  inspect complete surrounding logic
+   └── Analyze root cause
 
-3. FIX
-   ├── Generate corrected code
-   ├── execute_luau to replace the script source
-   └── Create an undo waypoint before applying
+3. FIX (IN EDIT MODE)
+   ├── If playing, start_stop_play(is_start=false) so Edit-mode changes persist
+   └── multi_edit(datamodel_type="Edit") or execute_luau wrapped in TryBeginRecording/FinishRecording
 
 4. VERIFY
-   ├── start_playtest (or re-run the specific code path)
-   ├── get_playtest_output  →  check if error persists
-   └── stop_playtest
+   ├── start_stop_play(is_start=true)  →  exercise failing path
+   ├── get_console_output(studio_id)  →  confirm zero errors
+   └── start_stop_play(is_start=false)
 
 5. ITERATE OR REPORT
    ├── If error persists and attempts < 5  →  return to step 2
-   ├── If error resolved  →  report success
-   └── If attempts >= 5  →  report findings and suggest manual investigation
+   └── If attempts >= 5  →  report findings and remaining unknowns
 ```
 
 ### Bulk Modification
 
-Safe large-scale changes across many instances.
+Safe large-scale changes across many instances (`Roblox_Studio` MCP has no native `undo`/`redo` tool, so `ChangeHistoryService` recording is mandatory):
 
+```luau
+-- Run via execute_luau(datamodel_type="Edit")
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
+local recId = ChangeHistoryService:TryBeginRecording("Bulk_Edit", "Bulk Modify Facility Parts")
+
+local ok, err = pcall(function()
+    local count = 0
+    for _, inst in ipairs(workspace.PosLaju_Facility:GetDescendants()) do
+        if inst:IsA("BasePart") then
+            inst.Anchored = true
+            count += 1
+            if count % 500 == 0 then
+                task.wait()
+            end
+        end
+    end
+end)
+
+if recId then
+    ChangeHistoryService:FinishRecording(
+        recId,
+        if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel
+    )
+end
+if not ok then
+    error(err)
+end
 ```
-1. SEARCH
-   ├── search_objects / search_by_property  →  identify all targets
-   └── mass_get_property  →  read current values for audit
 
-2. PLAN
-   ├── Review the list of affected instances
-   ├── Confirm the change is correct (log count and sample values)
-   └── Create undo waypoint via execute_luau:
-       game:GetService("ChangeHistoryService"):SetWaypoint("Before bulk edit")
-
-3. EXECUTE
-   ├── execute_luau with a loop over all targets
-   └── Apply changes in batches if count > 100
-
-4. VERIFY
-   ├── mass_get_property  →  confirm new values
-   ├── Spot-check a few instances via get_instance_properties
-   └── Report: "Changed X instances, verified Y samples"
-```
+1. **Search**: `search_game_tree` / `execute_luau` read query to inventory exact target paths and counts.
+2. **Execute**: Wrap edits in `TryBeginRecording` / `FinishRecording` (`Commit` on success, `Cancel` on failure), chunking >500-part writes with `task.wait()`.
+3. **Verify**: Re-query via `inspect_instance` / `execute_luau` and `screen_capture` to confirm expected state.
 
 ### Project Exploration
 
-Understanding an unfamiliar place file.
+Understanding an unfamiliar place file quickly:
 
-```
-1. STRUCTURE
-   ├── get_file_tree  →  full hierarchy
-   └── get_project_structure  →  high-level layout
-
-2. SCRIPTS
-   ├── Identify all scripts via search_objects (ClassName = "Script" / "LocalScript" / "ModuleScript")
-   ├── get_script_source for key scripts (main systems, entry points)
-   └── grep_scripts for patterns like "require", "RemoteEvent", "BindableEvent"
-
-3. ARCHITECTURE
-   ├── Map module dependencies (who requires whom)
-   ├── Map client-server communication (RemoteEvents/Functions)
-   └── Identify data flow (DataStores, player data, state management)
-
-4. REPORT
-   └── Summarize: services used, script count, system architecture, potential issues
-```
+1. **Hierarchy**: `search_game_tree(datamodel_type="Edit", max_depth=3)` across `Workspace`, `ServerScriptService`, `ReplicatedStorage`, `StarterPlayer`.
+2. **Scripts**: `script_search` / `script_grep` for `"require"`, `"RemoteEvent"`, `"BindableEvent"`, then `script_read` on entry points (or delegate to `subagent(subagent_type="explore")` / `skill("rbx-scene-analysis")`).
+3. **Architecture**: Map module dependencies, client-server remotes, DataStore flows, and Rojo vs Studio boundaries before proposing edits.
 
 ---
 
@@ -307,147 +237,50 @@ Understanding an unfamiliar place file.
 
 ### Pre-Operation Checks
 
-1. **Check Studio mode** before any operation — call `get_studio_mode` (Official) or infer from context (Community). Do not execute build code while a playtest is active.
-2. **Create undo waypoints** before any bulk or destructive operation:
-   ```lua
-   game:GetService("ChangeHistoryService"):SetWaypoint("Before: <description>")
-   ```
-3. **Read before write** — always inspect a script's current source before overwriting it.
-4. **Verify instance existence** before modifying — check that the target path resolves to a real instance.
+1. **Check Studio ID & State**: Always call `list_roblox_studios` and `get_studio_state` before mutating anything. Do not execute Edit-mode mutations while a playtest is running.
+2. **Wrap Mutations in `ChangeHistoryService` Recordings**:
+   - Use `TryBeginRecording` -> `pcall` -> `FinishRecording(recId, Enum.FinishRecordingOperation.Commit | Cancel)`.
+   - Never pass `nil` to `FinishRecording` (`TryBeginRecording` returns `nil` if another recording is active or during solo playtest), and always pass `Cancel` on error so future recordings are not locked out until Studio restarts.
+3. **Read Before Write**: Inspect script contents via `script_read` (or local `read_file`) and DataModel targets via `search_game_tree` / `inspect_instance` before editing.
+4. **Verify Instance Existence**: Guard `FindFirstChild` results rather than indexing unverified paths blindly.
 
 ### Destructive Operation Safeguards
 
-- **Deleting instances**: Always confirm with the user before calling `:Destroy()` on named or significant instances. Deleting anonymous/temporary parts is fine without confirmation.
-- **Overwriting scripts**: Log the previous source (or at least its length and key function names) before replacing.
-- **Clearing containers**: Never call `:ClearAllChildren()` on services (Workspace, ServerScriptService, etc.) without explicit user confirmation.
+- **Deleting instances**: Confirm with the user before calling `:Destroy()` on named architectural or gameplay subtrees outside temporary scratch parts.
+- **Overwriting scripts**: Read full source first and apply surgical `multi_edit` replacements rather than blind overwrites.
+- **Clearing containers**: Never call `:ClearAllChildren()` on top-level services (`Workspace`, `ServerScriptService`, etc.) without explicit user confirmation.
 
 ### Playtest Safety
 
-- Do not run `execute_luau` / `run_code` to modify the DataModel while a playtest is active — changes will be lost when the playtest ends.
-- Use `run_script_in_play_mode` (Official) for runtime testing during play mode.
-- Always `stop_playtest` before applying fixes discovered during testing.
+- Mutations applied while `Client`/`Server` playtest datamodels are active are discarded when `start_stop_play(is_start=false)` stops playtesting.
+- Always stop playtesting before editing scripts (`multi_edit` requires `datamodel_type="Edit"`) or building persistent world geometry.
 
 ---
 
 ## Best Practices
 
-### Batch Related Operations
+### Batch & Off-Tree Construction
 
-Group related reads and writes to minimize round-trips:
+Group reads/writes cleanly and build bulk instance trees **off-tree** before parenting:
 
-```lua
--- Instead of 5 separate execute_luau calls:
-local part1 = workspace:FindFirstChild("Part1")
-local part2 = workspace:FindFirstChild("Part2")
-local part3 = workspace:FindFirstChild("Part3")
-part1.BrickColor = BrickColor.new("Bright red")
-part2.BrickColor = BrickColor.new("Bright red")
-part3.BrickColor = BrickColor.new("Bright red")
-```
-
-### Read Before Write
-
-Always understand the current state before making changes:
-
-```
-1. get_script_source("ServerScriptService.GameManager")
-2. Analyze the existing code
-3. execute_luau to apply targeted modifications (not blind overwrites)
+```luau
+local container = Instance.new("Model")
+container.Name = "ModularWallChunk"
+for i = 1, 200 do
+    local part = Instance.new("Part")
+    part.Name = "Panel_" .. i
+    part.Anchored = true
+    part.Size = Vector3.new(4, 12, 1.5)
+    part.CFrame = CFrame.new(i * 4, 6, 0)
+    part.Parent = container
+end
+container.Parent = workspace -- single DataModel write after properties are configured
 ```
 
 ### Verify After Modify
 
-Confirm that changes took effect:
+Confirm every change took effect:
 
-```
-1. execute_luau  →  make the change
-2. get_instance_properties  →  confirm the new value
-   OR
-3. start_playtest  →  confirm runtime behavior
-```
-
-### Use Undo Waypoints Strategically
-
-Create waypoints at meaningful boundaries, not after every micro-change:
-
-- Before a batch of related changes (one waypoint for "Add combat system")
-- Before experimental changes that might need rollback
-- Before any operation the user might want to undo as a unit
-
----
-
-## Anti-Patterns
-
-### Running Code Without Checking Studio State
-
-**Wrong:**
-```
-execute_luau("workspace.Part.Position = Vector3.new(0, 10, 0)")
--- Might fail if Studio is in Play mode and Part doesn't exist in the play DataModel
-```
-
-**Right:**
-```
-1. get_studio_mode  →  confirm Edit mode
-2. execute_luau(...)
-```
-
-### Bulk Changes Without Undo Points
-
-**Wrong:**
-```
-execute_luau("for _, v in workspace:GetDescendants() do if v:IsA('Part') then v:Destroy() end end")
--- No way to recover
-```
-
-**Right:**
-```
-1. execute_luau: ChangeHistoryService:SetWaypoint("Before cleanup")
-2. execute_luau: perform the bulk delete
-3. Verify results
-```
-
-### Assuming Tool Availability
-
-**Wrong:**
-```
--- Calling grep_scripts when only the Official server is connected
--- Tool will not be found; operation fails
-```
-
-**Right:**
-```
-1. Detect which server is available (see MCP Detection above)
-2. Use only the tools confirmed to exist
-3. Fall back to run_code + get_console_output workarounds in Standard Mode
-```
-
-### Blind Script Overwrites
-
-**Wrong:**
-```
-execute_luau: set script.Source to entirely new code without reading the original
--- Loses existing work, custom modifications, comments
-```
-
-**Right:**
-```
-1. get_script_source  →  read current implementation
-2. Understand what exists
-3. Merge new logic with existing code or confirm full replacement with user
-```
-
-### Ignoring Error Output
-
-**Wrong:**
-```
-1. execute_luau(code)
-2. Assume success and move on
-```
-
-**Right:**
-```
-1. execute_luau(code)
-2. Check return value / output for errors
-3. If error: enter Debug Loop pattern
-```
+1. **Scripts**: `script_read` -> `start_stop_play(is_start=true)` -> `get_console_output` -> `start_stop_play(is_start=false)`.
+2. **3D Geometry**: `inspect_instance` / OBB-aware `execute_luau` audit -> multi-angle `screen_capture`.
+3. **Save Discipline**: Call `save_place(studio_id)` only at verified milestones or when requested by the user.

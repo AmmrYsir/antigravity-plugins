@@ -25,3 +25,9 @@ When developing or reviewing Roblox games and Luau code:
 - **Connection Hygiene**: Store all `:Connect()` connections and cleanly `:Disconnect()` them on object destruction or player leaving. Use `Maid` or `Trove` patterns.
 - **Loop Yielding**: Never run tight loops without explicit yields (`task.wait()`). Prefer event-driven architecture over polling loops.
 - **Replication Efficiency**: Avoid replicating high-frequency bulk updates. Transmit delta updates or state flags instead of continuous coordinates.
+
+## 5. Studio Edit-Mode, Rojo & Repo Hygiene
+- **MCP Session & Edit-Mode Safety**: Always resolve `studio_id` via `list_roblox_studios` and confirm `"Edit"` datamodel via `get_studio_state` before mutating Studio state. Never hardcode a `studio_id` UUID or spawn `StudioMCP.exe` directly via CLI wrapper scripts.
+- **ChangeHistoryService Undo Discipline**: Wrap every mutating `execute_luau` Edit-mode batch in `ChangeHistoryService:TryBeginRecording(name, displayName)` and `FinishRecording(recId, Enum.FinishRecordingOperation.Commit | Cancel)` inside `pcall` (guarding against `recId == nil`).
+- **Rojo vs Studio Workspace Boundaries**: Inspect `default.project.json` before modifying scripts or `Workspace`. Keep filesystem-synced scripts under Rojo `$path` owned on disk, ensure `Workspace` uses `"$ignoreUnknownInstances": true` when Studio-built geometry coexists with Rojo, and avoid conflicting `Baseplate` elevations at `Y = 0`.
+- **Zero Repo-Root Scratch Clutter**: Pass Luau inline via `execute_luau` or keep temporary scripts/reports/captures strictly in the session `scratch/` directory—never dump temporary `.luau`, `.py`, or `.png` artifacts into the repository root.

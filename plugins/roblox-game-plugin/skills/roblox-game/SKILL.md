@@ -17,18 +17,14 @@ shipping studios.
 
 ## MCP Detection Logic
 
-On every invocation, detect the available MCP mode before doing anything else:
+On every invocation, detect the available Studio MCP mode before doing anything else:
 
-1. **Full mode** (`MCP_MODE = "full"`, 39 tools) — Community MCP server detected.
-   Check for: `execute_luau`, `get_file_tree`, `grep_scripts`, `create_build`.
-   Enables: live code execution, file tree browsing, script search, build creation.
+1. **Studio MCP mode** (`MCP_MODE = "studio"`, 38 tools) — Official `Roblox_Studio` MCP proxy detected.
+   Check for: `list_roblox_studios`, `get_studio_state`, `execute_luau`, `multi_edit`, `search_game_tree`, `inspect_instance`, `screen_capture`.
+   Enables: live Edit/Play Luau execution, DataModel tree/property inspection, atomic script edits, Creator Store/AI asset tools, built-in `skill`/`subagent`/`http_get`, and viewport `screen_capture`.
 
-2. **Standard mode** (`MCP_MODE = "standard"`, 6 tools) — Official MCP server detected.
-   Check for: `run_code`, `insert_model`, `get_console_output`, `start_stop_play`.
-   Enables: code execution, model insertion, console reads, play testing.
-
-3. **Offline mode** (`MCP_MODE = "offline"`) — No MCP tools found.
-   Pure code generation and guidance only. Provide copy-paste-ready scripts.
+2. **Offline mode** (`MCP_MODE = "offline"`) — No Studio MCP tools found.
+   Pure code generation and guidance only. Provide copy-paste-ready scripts or Rojo filesystem layouts.
 
 All references, workflows, and outputs must adapt to the detected mode.
 
@@ -40,6 +36,7 @@ Match user intent and load the corresponding files:
 
 | User Intent | Load |
 |---|---|
+| Build 3D worlds, buildings, level blockouts, or visual QA in Studio | `../roblox-studio-building/SKILL.md` (and/or delegate to `@roblox-studio-builder`) |
 | Build a game (simulator/tycoon/RPG/obby/horror/BR) | `workflows/new-game.md` + `templates/genre-{type}.md` + `templates/game-scaffold.md` |
 | Fix bug / debug | `workflows/debug-loop.md` + `references/mcp-orchestration.md` |
 | Save/load data | `references/datastore-persistence.md` |
