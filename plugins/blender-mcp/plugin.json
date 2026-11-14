@@ -1,0 +1,21 @@
+{
+	"name": "blender-mcp",
+	"displayName": "Blender MCP",
+	"version": "1.0.2",
+	"description": "Connects Antigravity to Blender 5.2 via Blender Lab's MCP server for scene inspection, screenshots, rendering, and Python execution.",
+	"logo": "assets/logo.png",
+	"author": {
+		"name": "Blender Lab",
+		"url": "https://www.blender.org/lab/"
+	},
+	"homepage": "https://www.blender.org/lab/mcp-server/",
+	"repository": {
+		"type": "git",
+		"url": "https://projects.blender.org/lab/blender_mcp"
+	},
+	"suggestedPrompts": [
+		"Summarize all collections and objects in my open Blender scene",
+		"Take a screenshot of the 3D Viewport and inspect the active object",
+		"Analyze the scene for high-poly objects and potential bottlenecks"
+	]
+}

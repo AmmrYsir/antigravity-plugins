@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "blender_mcp": {
+      "command": "C:\\Users\\ammar\\.local\\bin\\blender-mcp.exe",
+      "args": [],
+      "env": {
+        "BLENDER_PATH": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe"
+      }
+    }
+  }
+}
