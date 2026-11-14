@@ -18,28 +18,6 @@ antigravity-plugins/
 ├── .gitignore                                 # Standard Git ignore rules
 ├── LICENSE                                    # MIT License
 └── plugins/                                   # Plugins Catalog
-    ├── blender/                               # Official Blender 3D MCP Integration
-    │   ├── plugin.json                        # Plugin manifest & suggested prompts
-    │   ├── mcp_config.json                    # MCP server definition (blender-mcp)
-    │   ├── README.md                          # Documentation, setup & 26 MCP tools guide
-    │   ├── assets/                            # Blender brand vector logo & icon
-    │   ├── rules/AGENTS.md                    # BMesh, TRS matrix & non-destructive safety rules
-    │   ├── agents/blender-3d-architect.md     # 3D Technical Artist & Modeling Architect subagent
-    │   └── skills/                            # Blender 3D Skills Database
-    │       ├── blender-integration/           # 26 MCP tools workflow & socket/CLI guide
-    │       └── blender-procedural-modeling/   # Faceted contour lofting, shaders & studio lighting
-    ├── nuxt/                                  # Official Nuxt 4/3 Framework Integration
-    │   ├── plugin.json                        # Plugin manifest & suggested prompts
-    │   ├── README.md                          # Documentation & usage guide
-    │   ├── rules/AGENTS.md                    # Nuxt SSR & Nitro architectural rules
-    │   ├── agents/nuxt-architect.md           # Full-Stack Nuxt Architect subagent
-    │   └── skills/nuxt/                       # Nuxt documentation, modules & SSR workflows
-    ├── nuxt-ui/                               # Nuxt UI Component Design System
-    │   ├── plugin.json                        # Plugin manifest & suggested prompts
-    │   ├── README.md                          # Documentation & usage guide
-    │   ├── rules/AGENTS.md                    # Nuxt UI v3 & Tailwind CSS conventions
-    │   ├── agents/nuxt-ui-architect.md        # Nuxt UI Design Architect subagent
-    │   └── skills/nuxt-ui/                    # Live component schemas, icons & form builders
     └── rea/                                   # REA (Reverse Engineer Anything) Suite
         ├── plugin.json                        # Plugin manifest & suggested prompts
         ├── mcp_config.json                    # MCP server definition (rea-agents)
@@ -62,7 +40,6 @@ antigravity-plugins/
 
 | Plugin Name | Directory | Description | Integrated MCP Server | Subagents & Skills |
 | :--- | :--- | :--- | :--- | :--- |
-| **Blender 3D** | [`plugins/blender/`](plugins/blender/) | Official Blender 3D integration: inspect scenes, execute procedural BMesh/Python modeling scripts, configure materials and lighting, render viewports, and search Blender API & manual docs. | Local Blender MCP (`blender-mcp` over stdio & TCP `:9876`) with 26 tools | 1 Subagent (`blender-3d-architect`)<br>2 Skills (`blender-integration`, `blender-procedural-modeling`) |
 | **Nuxt** | [`plugins/nuxt/`](plugins/nuxt/) | Official Nuxt framework integration: explore Nuxt 4/3 docs, discover community modules, configure Nitro server routes, and check deployment providers. | Remote Nuxt MCP (`https://nuxt.com/mcp`) | 1 Subagent (`nuxt-architect`)<br>1 Skill (`nuxt`) |
 | **Nuxt UI** | [`plugins/nuxt-ui/`](plugins/nuxt-ui/) | Official Nuxt UI integration: discover components, fetch live schemas, search icons, and build Vue/Nuxt interfaces with real-time MCP tooling. | Remote Nuxt UI MCP (`https://ui.nuxt.com/mcp`) | 1 Subagent (`nuxt-ui-architect`)<br>1 Skill (`nuxt-ui`) |
 | **REA (Reverse Engineer Anything)** | [`plugins/rea/`](plugins/rea/) | Deep reverse-engineering suite for native binaries, Electron apps, Android APKs, network captures, and firmware. | Local REA MCP (`rea-agents` via `npx`) with 200+ tools | 1 Subagent (`rea-reverse-engineer`)<br>7 Modular Skills + 6 Guides |
@@ -75,7 +52,7 @@ Installing any plugin in Antigravity is as simple as copying the plugin folder i
 
 ### Step 1: Copy the plugin folder
 
-Copy any plugin folder you want from `plugins/` (for example, `plugins/blender`, `plugins/rea`, `plugins/nuxt`, or `plugins/nuxt-ui`) into:
+Copy any plugin folder you want from `plugins/` (for example, `plugins/rea`, `plugins/nuxt`, or `plugins/nuxt-ui`) into:
 
 📁 **`.gemini` ➔ `config` ➔ `plugins`** in your user home directory:
 
